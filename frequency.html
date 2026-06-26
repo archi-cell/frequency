@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Frequency — The Soundtrack of Your Emotions</title>
+
+    <meta name="theme-color" content="#07070b">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Frequency">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+
+    <style>
+        :root {
+            --bg: #07070b;
+            --bg-2: #0c0c13;
+            --glass: rgba(255, 255, 255, 0.045);
+            --glass-strong: rgba(255, 255, 255, 0.07);
+            --border: rgba(255, 255, 255, 0.09);
+            --text: #f1f1f4;
+            --text-muted: #8d8d99;
+            --text-dim: #5a5a66;
+
+            /* mood theme defaults (calm) */
+            --accent: #2dd4bf;
+            --accent-2: #6366f1;
+            --accent-soft: rgba(45, 212, 191, 0.16);
+
+            --radius-lg: 22px;
+            --radius-md: 14px;
+            --radius-sm: 9px;
+            --ease: cubic-bezier(.16, 1, .3, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            color-scheme: dark;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ---------- Ambient frequency canvas ---------- */
+        #ambient {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            opacity: .55;
+            transition: opacity .8s var(--ease);
+        }
+
+        .grain {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+            opacity: .025;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        }
+
+        .vignette {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+            background: radial-gradient(ellipse at 50% 0%, transparent 0%, transparent 35%, var(--bg) 92%);
+        }
+
+        /* ---------- Layout ---------- */
+        .scene {
+            position: relative;
+            z-index: 2;
+            max-width: 560px;
+            margin: 0 auto;
+            padding: 48px 22px 80px;
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+        }
+
+        /* ---------- Header ---------- */
+        header {
+            text-align: center;
+            margin-bottom: 4px;
+        }
+
+        .eyebrow {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            letter-spacing: .22em;
+            text-transform: uppercase;
+            color: var(--accent);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 18px;
+            transition: color .6s var(--ease);
+        }
+
+        .eyebrow::before,
+        .eyebrow::after {
+            content: '';
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 8px var(--accent);
+            transition: background .6s var(--ease);
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: clamp(2.4rem, 9vw, 3.3rem);
+            letter-spacing: -0.02em;
+            line-height: 1;
+            background: linear-gradient(135deg, #fff 30%, var(--accent) 90%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            transition: background .6s var(--ease);
+        }
+
+        .tagline {
+            margin-top: 10px;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            letter-spacing: .01em;
+        }
+
+        /* ---------- Glass panels ---------- */
+        .panel {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 26px;
+            backdrop-filter: blur(20px) saturate(140%);
+            -webkit-backdrop-filter: blur(20px) saturate(140%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--glass-strong), transparent);
+        }
+
+        .field {
+            margin-bottom: 24px;
+        }
+
+        .field:last-child {
+            margin-bottom: 0;
+        }
+
+        .field-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 12px;
+        }
+
+        .field-label .value {
+            color: var(--accent);
+            font-size: 13px;
+            transition: color .6s var(--ease);
+        }
+
+        /* ---------- Mood pills ---------- */
+        .pill-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .pill {
+            appearance: none;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--text-muted);
+            border-radius: var(--radius-sm);
+            padding: 12px 6px;
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            transition: transform .25s var(--ease), border-color .25s, background .25s, color .25s;
+        }
+
+        .pill .ico {
+            font-size: 18px;
+            line-height: 1;
+        }
+
+        .pill:hover {
+            transform: translateY(-2px);
+            border-color: var(--glass-strong);
+        }
+
+        .pill.active {
+            background: var(--accent-soft);
+            border-color: var(--accent);
+            color: var(--text);
+            box-shadow: 0 0 0 1px var(--accent) inset, 0 8px 20px -8px var(--accent);
+        }
+
+        /* ---------- Language pills (single row) ---------- */
+        .pill-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        /* ---------- Sliders ---------- */
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            border-radius: 4px;
+            background: linear-gradient(90deg, var(--accent) var(--fill, 50%), rgba(255, 255, 255, 0.08) var(--fill, 50%));
+            outline: none;
+            transition: background .4s var(--ease);
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 0 0 4px var(--accent-soft), 0 4px 12px rgba(0, 0, 0, .4);
+            cursor: pointer;
+            transition: box-shadow .4s var(--ease);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border: none;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 0 0 4px var(--accent-soft);
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-track {
+            height: 4px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        /* ---------- Generate button ---------- */
+        .generate {
+            width: 100%;
+            margin-top: 6px;
+            padding: 17px;
+            border: none;
+            border-radius: var(--radius-md);
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            font-size: 15px;
+            letter-spacing: .02em;
+            color: #07070b;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            transition: transform .25s var(--ease), filter .3s;
+        }
+
+        .generate::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -60%;
+            width: 40%;
+            height: 100%;
+            background: linear-gradient(120deg, transparent, rgba(255, 255, 255, .55), transparent);
+            transform: skewX(-20deg);
+            transition: left .7s var(--ease);
+        }
+
+        .generate:hover::after {
+            left: 130%;
+        }
+
+        .generate:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.05);
+        }
+
+        .generate:active {
+            transform: translateY(0) scale(.99);
+        }
+
+        .generate span {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ---------- Result panel ---------- */
+        #resultPanel {
+            display: none;
+        }
+
+        #resultPanel.show {
+            display: block;
+            animation: rise .6s var(--ease) both;
+        }
+
+        @keyframes rise {
+            from {
+                opacity: 0;
+                transform: translateY(18px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .eq-strip {
+            height: 64px;
+            display: flex;
+            align-items: flex-end;
+            gap: 3px;
+            margin-bottom: 20px;
+            border-radius: var(--radius-sm);
+            padding: 10px 8px;
+            background: rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+        }
+
+        .eq-bar {
+            flex: 1;
+            min-width: 2px;
+            border-radius: 2px 2px 0 0;
+            background: linear-gradient(180deg, var(--accent), var(--accent-2));
+            transition: background .5s var(--ease);
+        }
+
+        .state-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .state-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            border-radius: 20px;
+            padding: 4px 10px;
+            background: var(--accent-soft);
+            white-space: nowrap;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin: 18px 0;
+            padding: 16px 0;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .meta-item .k {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 4px;
+        }
+
+        .meta-item .v {
+            font-size: 14px;
+            color: var(--text);
+        }
+
+        .block-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin: 18px 0 10px;
+        }
+
+        .description {
+            color: var(--text-muted);
+            font-size: 14.5px;
+            line-height: 1.65;
+        }
+
+        .track-list {
+            list-style: none;
+            margin-top: 4px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .track {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 13px 10px;
+            border-radius: var(--radius-sm);
+            transition: background .25s;
+        }
+
+        .track:hover {
+            background: rgba(255, 255, 255, 0.035);
+        }
+
+        .track .mini-eq {
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            flex-shrink: 0;
+        }
+
+        .mini-eq span {
+            width: 3px;
+            background: var(--accent);
+            border-radius: 1px;
+            animation: bounce 1.1s ease-in-out infinite;
+        }
+
+        .mini-eq span:nth-child(1) {
+            height: 40%;
+            animation-delay: 0s;
+        }
+
+        .mini-eq span:nth-child(2) {
+            height: 100%;
+            animation-delay: .2s;
+        }
+
+        .mini-eq span:nth-child(3) {
+            height: 65%;
+            animation-delay: .4s;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            100% {
+                transform: scaleY(.4);
+            }
+
+            50% {
+                transform: scaleY(1);
+            }
+        }
+
+        .track .name {
+            font-size: 14px;
+            color: var(--text);
+            flex: 1;
+        }
+
+        .track .num {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--text-dim);
+        }
+
+        /* ---------- History strip ---------- */
+        #historyStrip {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+            padding-top: 6px;
+        }
+
+        #historyStrip.show {
+            display: flex;
+        }
+
+        .history-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            opacity: .7;
+            transition: transform .2s;
+        }
+
+        .history-dot:hover {
+            transform: scale(1.3);
+        }
+
+        #historyLabel {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: var(--text-dim);
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            margin-right: 6px;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10.5px;
+            letter-spacing: .08em;
+            color: var(--text-dim);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: .001ms !important;
+                transition-duration: .001ms !important;
+            }
+        }
+
+        @media (max-width:380px) {
+            .pill-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Focus visibility */
+        button:focus-visible,
+        input:focus-visible,
+        .pill:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+    </style>
+</head>
+
+<body data-mood="calm">
+
+    <canvas id="ambient"></canvas>
+    <div class="grain"></div>
+    <div class="vignette"></div>
+
+    <div class="scene">
+
+        <header>
+            <div class="eyebrow">Mood Engine</div>
+            <h1>Frequency</h1>
+            <p class="tagline">Tune your state. Hear what it sounds like.</p>
+        </header>
+
+        <!-- Controls -->
+        <section class="panel" id="controlPanel">
+
+            <div class="field">
+                <div class="field-label"><span>Mood</span></div>
+                <div class="pill-grid" id="moodGrid" role="radiogroup" aria-label="Mood">
+                    <button class="pill active" data-mood="calm" role="radio" aria-checked="true"><span
+                            class="ico">😌</span>Calm</button>
+                    <button class="pill" data-mood="happy" role="radio" aria-checked="false"><span
+                            class="ico">😊</span>Happy</button>
+                    <button class="pill" data-mood="focused" role="radio" aria-checked="false"><span
+                            class="ico">🎯</span>Focused</button>
+                    <button class="pill" data-mood="excited" role="radio" aria-checked="false"><span
+                            class="ico">⚡</span>Excited</button>
+                    <button class="pill" data-mood="sad" role="radio" aria-checked="false"><span
+                            class="ico">🌧️</span>Sad</button>
+                    <button class="pill" data-mood="stressed" role="radio" aria-checked="false"><span
+                            class="ico">😵</span>Stressed</button>
+                </div>
+            </div>
+
+            <div class="field">
+                <div class="field-label"><span>Energy</span><span class="value" id="energyValue">5</span></div>
+                <input type="range" id="energy" min="1" max="10" value="5" aria-label="Energy level">
+            </div>
+
+            <div class="field">
+                <div class="field-label"><span>Focus</span><span class="value" id="focusValue">5</span></div>
+                <input type="range" id="focus" min="1" max="10" value="5" aria-label="Focus level">
+            </div>
+
+            <div class="field">
+                <div class="field-label"><span>Preferred Language</span></div>
+                <div class="pill-row" id="languageRow" role="radiogroup" aria-label="Preferred language">
+                    <button class="pill active" data-lang="mix" role="radio" aria-checked="true"><span
+                            class="ico">🌍</span>Mix</button>
+                    <button class="pill" data-lang="hindi" role="radio" aria-checked="false"><span
+                            class="ico">🇮🇳</span>Hindi</button>
+                    <button class="pill" data-lang="english" role="radio" aria-checked="false"><span
+                            class="ico">🇺🇸</span>English</button>
+                    <button class="pill" data-lang="punjabi" role="radio" aria-checked="false"><span
+                            class="ico">🎵</span>Punjabi</button>
+                </div>
+            </div>
+
+            <button class="generate" id="generateBtn"><span>Generate My Frequency</span></button>
+        </section>
+
+        <!-- Result -->
+        <section class="panel" id="resultPanel" aria-live="polite">
+            <div class="eq-strip" id="eqStrip"></div>
+
+            <div class="state-row">
+                <div class="state-title" id="stateTitle">—</div>
+                <div class="badge" id="stateBadge">LIVE</div>
+            </div>
+
+            <div class="meta-grid">
+                <div class="meta-item">
+                    <div class="k">Mood</div>
+                    <div class="v" id="metaMood">—</div>
+                </div>
+                <div class="meta-item">
+                    <div class="k">Language</div>
+                    <div class="v" id="metaLang">—</div>
+                </div>
+                <div class="meta-item">
+                    <div class="k">Energy</div>
+                    <div class="v" id="metaEnergy">—</div>
+                </div>
+                <div class="meta-item">
+                    <div class="k">Focus</div>
+                    <div class="v" id="metaFocus">—</div>
+                </div>
+            </div>
+
+            <div class="block-label">Soundscape</div>
+            <p class="description" id="soundscapeText">—</p>
+
+            <div class="block-label">Recommendation</div>
+            <p class="description" id="recommendationText">—</p>
+
+            <div class="block-label">Recommended Tracks</div>
+            <ul class="track-list" id="trackList"></ul>
+        </section>
+
+        <div id="historyStrip">
+            <span id="historyLabel">Recent</span>
+        </div>
+
+        <footer>FREQUENCY · LOCAL-ONLY · NO DATA LEAVES THIS DEVICE</footer>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            /* ============ Theme tokens per mood ============ */
+            const THEMES = {
+                calm: { accent: '#2dd4bf', accent2: '#6366f1' },
+                happy: { accent: '#fbbf24', accent2: '#fb923c' },
+                focused: { accent: '#34d399', accent2: '#06b6d4' },
+                excited: { accent: '#f472b6', accent2: '#ef4444' },
+                sad: { accent: '#7c93b8', accent2: '#475569' },
+                stressed: { accent: '#ef4444', accent2: '#7f1d1d' }
+            };
+
+            function hexToRgb(hex) {
+                const h = hex.replace('#', '');
+                const n = parseInt(h, 16);
+                return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+            }
+
+            function applyTheme(mood) {
+                const t = THEMES[mood] || THEMES.calm;
+                const root = document.documentElement.style;
+                root.setProperty('--accent', t.accent);
+                root.setProperty('--accent-2', t.accent2);
+                const rgb = hexToRgb(t.accent);
+                root.setProperty('--accent-soft', `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.16)`);
+                document.body.setAttribute('data-mood', mood);
+            }
+
+            /* ============ Song database ============ */
+            const songs = {
+                calm: { hindi: ["Kasoor - Prateek Kuhad", "Safarnama"], english: ["Sunset Lover - Petit Biscuit", "Paradise - Coldplay"], punjabi: ["Waalian - Harnoor", "Kina Chir - The PropheC"] },
+                happy: { hindi: ["Ilahi", "Zinda"], english: ["Blinding Lights", "Levitating"], punjabi: ["Brown Munde", "Born To Shine"] },
+                focused: { hindi: ["Lakshya Theme"], english: ["Deep Focus Playlist"], punjabi: ["Punjabi LoFi Mix"] },
+                excited: { hindi: ["Apna Time Aayega", "Kar Har Maidaan Fateh"], english: ["Believer", "Can't Hold Us"], punjabi: ["Winning Speech", "Insane"] },
+                sad: { hindi: ["Channa Mereya", "Kabira"], english: ["Someone You Loved", "Fix You"], punjabi: ["Qismat", "Faasle"] },
+                stressed: { hindi: ["Kun Faya Kun", "Iktara"], english: ["Weightless", "River Flows In You"], punjabi: ["Waalian", "Kina Chir"] }
+            };
+
+            const STATE_COPY = {
+                calm: { high: "Creative Flow", low: "Balanced Calm", sound: "Ambient synth and soft piano, low in the mix.", rec: "Good window for creative or open-ended work." },
+                happy: { high: "Momentum Mode", low: "Positive Vibes", sound: "Upbeat melodies and energetic beats.", rec: "Channel this into something you've been putting off." },
+                focused: { high: "Deep Work Mode", low: "Deep Work Mode", sound: "Lo-fi focus beats, steady and unobtrusive.", rec: "Ideal for coding, writing, or studying in long stretches." },
+                excited: { high: "Hyper Momentum", low: "Hyper Momentum", sound: "Synthwave and energetic bass.", rec: "Capture ideas now, before the spike settles." },
+                sad: { high: "Reflection Mode", low: "Reflection Mode", sound: "Rain ambience layered under slow piano.", rec: "Take time for yourself before deciding anything." },
+                stressed: { high: "Recovery Mode", low: "Recovery Mode", sound: "Breathing tones and calming low-frequency ambience.", rec: "Slow down. Recharge before the next thing." }
+            };
+
+            /* ============ Elements ============ */
+            const moodGrid = document.getElementById('moodGrid');
+            const languageRow = document.getElementById('languageRow');
+            const energySlider = document.getElementById('energy');
+            const focusSlider = document.getElementById('focus');
+            const energyValue = document.getElementById('energyValue');
+            const focusValue = document.getElementById('focusValue');
+            const generateBtn = document.getElementById('generateBtn');
+            const resultPanel = document.getElementById('resultPanel');
+            const eqStrip = document.getElementById('eqStrip');
+            const historyStrip = document.getElementById('historyStrip');
+
+            let currentMood = 'calm';
+            let currentLang = 'mix';
+
+            function setFillVar(slider) {
+                const pct = ((slider.value - slider.min) / (slider.max - slider.min)) * 100;
+                slider.style.setProperty('--fill', pct + '%');
+            }
+            setFillVar(energySlider);
+            setFillVar(focusSlider);
+
+            /* ============ Pill selection ============ */
+            function selectPill(group, target, onSelect) {
+                group.querySelectorAll('.pill').forEach(p => {
+                    p.classList.remove('active');
+                    p.setAttribute('aria-checked', 'false');
+                });
+                target.classList.add('active');
+                target.setAttribute('aria-checked', 'true');
+                onSelect();
+            }
+
+            moodGrid.addEventListener('click', e => {
+                const btn = e.target.closest('.pill');
+                if (!btn) return;
+                selectPill(moodGrid, btn, () => {
+                    currentMood = btn.dataset.mood;
+                    applyTheme(currentMood);
+                });
+            });
+
+            languageRow.addEventListener('click', e => {
+                const btn = e.target.closest('.pill');
+                if (!btn) return;
+                selectPill(languageRow, btn, () => { currentLang = btn.dataset.lang; });
+            });
+
+            energySlider.addEventListener('input', () => {
+                energyValue.textContent = energySlider.value;
+                setFillVar(energySlider);
+            });
+            focusSlider.addEventListener('input', () => {
+                focusValue.textContent = focusSlider.value;
+                setFillVar(focusSlider);
+            });
+
+            /* ============ Mini equalizer strip (result panel) ============ */
+            const EQ_BARS = 28;
+            for (let i = 0; i < EQ_BARS; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'eq-bar';
+                eqStrip.appendChild(bar);
+            }
+            let eqRAF = null;
+            function animateEqStrip(intensity) {
+                const bars = eqStrip.querySelectorAll('.eq-bar');
+                let t = 0;
+                if (eqRAF) cancelAnimationFrame(eqRAF);
+                function frame() {
+                    t += 0.06;
+                    bars.forEach((b, i) => {
+                        const wave = Math.sin(t + i * 0.4) * 0.5 + 0.5;
+                        const noise = Math.random() * 0.25;
+                        const h = Math.max(6, (wave * 0.7 + noise) * intensity * 56);
+                        b.style.height = h + 'px';
+                    });
+                    eqRAF = requestAnimationFrame(frame);
+                }
+                frame();
+            }
+
+            /* ============ Generate ============ */
+            generateBtn.addEventListener('click', () => {
+                const energy = Number(energySlider.value);
+                const focus = Number(focusSlider.value);
+                const copy = STATE_COPY[currentMood];
+                const isHigh = energy > 6 && focus > 6;
+                const state = copy[isHigh ? 'high' : 'low'];
+
+                let recommendations = [];
+                if (currentLang === 'mix') {
+                    recommendations = [songs[currentMood].hindi[0], songs[currentMood].english[0], songs[currentMood].punjabi[0]];
+                } else {
+                    recommendations = songs[currentMood][currentLang];
+                }
+
+                document.getElementById('stateTitle').textContent = state;
+                document.getElementById('stateBadge').textContent = 'NOW PLAYING';
+                document.getElementById('metaMood').textContent = currentMood;
+                document.getElementById('metaLang').textContent = currentLang;
+                document.getElementById('metaEnergy').textContent = energy + ' / 10';
+                document.getElementById('metaFocus').textContent = focus + ' / 10';
+                document.getElementById('soundscapeText').textContent = copy.sound;
+                document.getElementById('recommendationText').textContent = copy.rec;
+
+                const trackList = document.getElementById('trackList');
+                trackList.innerHTML = recommendations.map((song, i) => `
+      <li class="track">
+        <span class="mini-eq"><span></span><span></span><span></span></span>
+        <span class="name">${song}</span>
+        <span class="num">${String(i + 1).padStart(2, '0')}</span>
+      </li>
+    `).join('');
+
+                resultPanel.classList.add('show');
+                animateEqStrip(0.55 + (energy / 10) * 0.6);
+
+                if ('vibrate' in navigator) navigator.vibrate(60);
+
+                resultPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                saveHistory(currentMood, energy, focus, currentLang);
+            });
+
+            /* ============ Local history ============ */
+            function saveHistory(mood, energy, focus, language) {
+                let history = [];
+                try { history = JSON.parse(localStorage.getItem('frequencyHistory')) || []; } catch (e) { history = []; }
+                history.push({ mood, energy, focus, language, timestamp: new Date().toISOString() });
+                if (history.length > 24) history = history.slice(-24);
+                try { localStorage.setItem('frequencyHistory', JSON.stringify(history)); } catch (e) { }
+                renderHistory(history);
+            }
+
+            function renderHistory(history) {
+                if (!history || !history.length) return;
+                historyStrip.classList.add('show');
+                const existingDots = historyStrip.querySelectorAll('.history-dot');
+                existingDots.forEach(d => d.remove());
+                history.slice(-10).forEach(entry => {
+                    const dot = document.createElement('div');
+                    dot.className = 'history-dot';
+                    const t = THEMES[entry.mood] || THEMES.calm;
+                    dot.style.background = t.accent;
+                    dot.title = `${entry.mood} · energy ${entry.energy} · focus ${entry.focus}`;
+                    historyStrip.appendChild(dot);
+                });
+            }
+
+            try {
+                const stored = JSON.parse(localStorage.getItem('frequencyHistory')) || [];
+                renderHistory(stored);
+            } catch (e) { }
+
+            /* ============ Ambient background frequency visualizer ============ */
+            const canvas = document.getElementById('ambient');
+            const ctx = canvas.getContext('2d');
+            const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+            function resize() {
+                canvas.width = window.innerWidth * devicePixelRatio;
+                canvas.height = window.innerHeight * devicePixelRatio;
+                canvas.style.width = window.innerWidth + 'px';
+                canvas.style.height = window.innerHeight + 'px';
+            }
+            resize();
+            window.addEventListener('resize', resize);
+
+            const BAR_COUNT = 48;
+            let phase = 0;
+
+            function getAccentRGB() {
+                const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#2dd4bf';
+                return hexToRgb(accent);
+            }
+
+            function drawFrame() {
+                const w = canvas.width, h = canvas.height;
+                ctx.clearRect(0, 0, w, h);
+
+                const energy = Number(energySlider.value) / 10;
+                const focus = Number(focusSlider.value) / 10;
+                const amp = 0.18 + energy * 0.5;
+                const speed = 0.01 + energy * 0.02;
+                const calmFactor = 1 - focus * 0.3;
+
+                const [r, g, b] = getAccentRGB();
+                const barWidth = w / BAR_COUNT;
+                const baseY = h * 0.86;
+
+                for (let i = 0; i < BAR_COUNT; i++) {
+                    const n = Math.sin(phase * speed * 40 + i * 0.5) * 0.5 + 0.5;
+                    const n2 = Math.sin(phase * speed * 17 + i * 1.3 + 2) * 0.5 + 0.5;
+                    const height = (n * 0.6 + n2 * 0.4) * amp * h * calmFactor * 0.5;
+                    const x = i * barWidth;
+                    const grad = ctx.createLinearGradient(0, baseY, 0, baseY - height);
+                    grad.addColorStop(0, `rgba(${r},${g},${b},0.0)`);
+                    grad.addColorStop(1, `rgba(${r},${g},${b},0.35)`);
+                    ctx.fillStyle = grad;
+                    ctx.fillRect(x + barWidth * 0.15, baseY - height, barWidth * 0.7, height);
+                }
+
+                phase += 1;
+                if (!reduceMotion) {
+                    requestAnimationFrame(drawFrame);
+                }
+            }
+
+            drawFrame();
+            if (reduceMotion) {
+                // Redraw occasionally instead of a continuous loop
+                setInterval(drawFrame, 4000);
+            }
+
+            applyTheme(currentMood);
+        });
+    </script>
+
+</body>
+
+</html>
